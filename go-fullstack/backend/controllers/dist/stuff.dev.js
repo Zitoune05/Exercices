@@ -8,6 +8,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
 var Thing = require('../models/thing');
 
+var fs = require('fs');
+
 exports.createThing = function (req, res, next) {
   var thingObject = JSON.parse(req.body.thing);
   delete thingObject._id;
@@ -57,14 +59,25 @@ exports.modifyThing = function (req, res, next) {
 };
 
 exports.deleteThing = function (req, res, next) {
-  Thing.deleteOne({
+  Thing.findOne({
     _id: req.params.id
-  }).then(function () {
-    res.status(200).json({
-      message: 'Deleted!'
+  }).then(function (thing) {
+    var filename = thing.imageUrl.split('/images/')[1];
+    fs.unlink("images/".concat(filename), function () {
+      Thing.deleteOne({
+        _id: req.params.id
+      }).then(function () {
+        return res.status(200).json({
+          message: 'Objet supprimé !'
+        });
+      })["catch"](function (error) {
+        return res.status(400).json({
+          error: error
+        });
+      });
     });
   })["catch"](function (error) {
-    res.status(400).json({
+    return res.status(500).json({
       error: error
     });
   });
